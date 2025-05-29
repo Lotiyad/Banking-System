@@ -1,0 +1,12 @@
+package com.example.banking.dto;
+
+
+
+import lombok.Data;
+
+@Data
+public class AdminUserCreationRequest {
+    private String username;
+    private String password;
+    private String role;
+}
