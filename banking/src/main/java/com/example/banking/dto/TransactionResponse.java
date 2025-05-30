@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 public class TransactionResponse {
+    private Long id;
     private String referenceNumber;
     private String type;
     private BigDecimal amount;

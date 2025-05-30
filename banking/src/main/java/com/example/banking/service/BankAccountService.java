@@ -23,7 +23,7 @@ public class BankAccountService {
 
     private final BankAccountRepository accountRepository;
     private final UserRepository userRepository;
-
+    private final BankAccountRepository bankAccountRepository;
     public BankAccount createAccount(String username, AccountType accountType, BigDecimal initialDeposit, String branch) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
@@ -43,8 +43,23 @@ public class BankAccountService {
     }
 
 
-    public List<BankAccount> getPendingAccounts() {
-        return accountRepository.findByApprovedFalse();
+    public List<BankAccountResponse> getPendingAccounts() {
+        List<BankAccount> pendingAccounts = accountRepository.findByApprovedFalse();
+
+        return pendingAccounts.stream()
+                .map(account -> new BankAccountResponse(
+                        account.getId(),
+                        account.getAccountNumber(),
+                        account.getAccountType().name(),
+                        account.getStatus().name(),
+                        account.getOwner().getUsername(),
+                        account.getCreatedDate(),
+                        account.isApproved(),
+                        account.getInitialDeposit(),
+                        account.getBalance(),
+                        account.getBranch()
+                ))
+                .collect(Collectors.toList());
     }
 
     public void approveAccount(Long accountId) {
@@ -55,6 +70,7 @@ public class BankAccountService {
         account.setStatus(AccountStatus.ACTIVE);
         accountRepository.save(account);
     }
+
     public List<BankAccountResponse> getAccountsByUsername(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
@@ -63,6 +79,7 @@ public class BankAccountService {
 
         return accounts.stream()
                 .map(account -> new BankAccountResponse(
+                        account.getId(),
                         account.getAccountNumber(),
                         account.getAccountType().name(),
                         account.getStatus().name(),
@@ -79,5 +96,29 @@ public class BankAccountService {
     private String generateAccountNumber() {
         return "ACCT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
+    public BankAccount findById(Long accountId) {
+        return bankAccountRepository.findById(accountId)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+    }
+    public List<BankAccountResponse> getActiveAccountResponses() {
+        List<BankAccount> activeAccounts = accountRepository.findByStatus(AccountStatus.ACTIVE);
+
+        return activeAccounts.stream()
+                .map(account -> new BankAccountResponse(
+                        account.getId(),
+                        account.getAccountNumber(),
+                        account.getAccountType().name(),
+                        account.getStatus().name(),
+                        account.getOwner().getUsername(),
+                        account.getCreatedDate(),
+                        account.isApproved(),
+                        account.getInitialDeposit(),
+                        account.getBalance(),
+                        account.getBranch()
+                ))
+                .collect(Collectors.toList());
+    }
+
+
 }
 

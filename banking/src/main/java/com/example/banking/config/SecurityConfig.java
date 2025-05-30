@@ -34,10 +34,12 @@ private final UserDetailsService userDetailsService;
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/staff/**").hasRole("STAFF")
                         .requestMatchers("/customer/**").hasRole("CUSTOMER")
-                        .requestMatchers("/api/transactions/**").hasRole("CUSTOMER")
-                        .requestMatchers("/api/transactions/all").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("/api/transaction/all").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("/api/transaction/summary/**").hasAnyRole("CUSTOMER", "ADMIN", "STAFF")
+                        .requestMatchers("/api/transaction/**").hasAnyRole("CUSTOMER", "ADMIN", "STAFF")
                         .anyRequest().authenticated()
                 )
+
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

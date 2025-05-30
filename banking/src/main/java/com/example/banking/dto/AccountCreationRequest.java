@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 
 @Data
 public class AccountCreationRequest {
-    private String username;
+
     private AccountType accountType;
     private BigDecimal initialDeposit;
     private String branch;
