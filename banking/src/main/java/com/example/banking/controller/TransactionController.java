@@ -1,9 +1,6 @@
 package com.example.banking.controller;
 
-import com.example.banking.dto.MonthlySummaryResponse;
-import com.example.banking.dto.TransactionRequest;
-import com.example.banking.dto.TransactionResponse;
-import com.example.banking.dto.TransferRequest;
+import com.example.banking.dto.*;
 import com.example.banking.entity.BankAccount;
 import com.example.banking.entity.Transaction;
 import com.example.banking.repository.UserRepository;
@@ -17,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 
@@ -127,10 +125,20 @@ public class TransactionController {
         List<MonthlySummaryResponse> summary = transactionService.getMonthlySummary(accountId, ym);
         return ResponseEntity.ok(summary);
     }
+    @GetMapping("/summary/all")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    public ResponseEntity<List<MonthlyResponse>> getAllAccountsMonthlySummary(
+            @RequestParam String yearMonth) {
 
+        YearMonth ym = YearMonth.parse(yearMonth); // expects format "2025-05"
+        List<MonthlyResponse> summary = transactionService.getMonthlySummaryForAllAccounts(ym);
+        return ResponseEntity.ok(summary);
+    }
     @GetMapping("/statement/all")
-    public ResponseEntity<byte[]> downloadAllStatements(Authentication auth) throws Exception {
-        String username = auth.getName();
+    public ResponseEntity<byte[]> downloadAllStatements(
+            @RequestParam(required = false) String yearMonth,
+            Authentication auth) throws Exception {
+
         boolean isStaffOrAdmin = auth.getAuthorities().stream()
                 .anyMatch(role -> role.getAuthority().equals("ROLE_STAFF") || role.getAuthority().equals("ROLE_ADMIN"));
 
@@ -138,7 +146,16 @@ public class TransactionController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        List<Transaction> allTransactions = transactionService.findAllTransactions();
+        List<Transaction> allTransactions;
+        if (yearMonth != null) {
+            YearMonth ym = YearMonth.parse(yearMonth); // e.g. "2025-05"
+            LocalDateTime start = ym.atDay(1).atStartOfDay();
+            LocalDateTime end = ym.plusMonths(1).atDay(1).atStartOfDay();
+            allTransactions = transactionService.findTransactionsBetween(start, end);
+        } else {
+            allTransactions = transactionService.findAllTransactions();
+        }
+
         byte[] pdfBytes = transactionService.generatePdfStatement(allTransactions);
 
         HttpHeaders headers = new HttpHeaders();
@@ -150,5 +167,6 @@ public class TransactionController {
 
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
+
 
 }

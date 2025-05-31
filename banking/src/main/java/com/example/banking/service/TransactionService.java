@@ -1,5 +1,6 @@
 package com.example.banking.service;
 
+import com.example.banking.dto.MonthlyResponse;
 import com.example.banking.dto.MonthlySummaryResponse;
 import com.example.banking.dto.TransactionResponse;
 import com.example.banking.entity.BankAccount;
@@ -275,6 +276,23 @@ public class TransactionService {
 
     public List<Transaction> findAllTransactions() {
         return transactionRepository.findAll();
+    }
+    public List<MonthlyResponse> getMonthlySummaryForAllAccounts(YearMonth yearMonth) {
+        LocalDateTime startDate = yearMonth.atDay(1).atStartOfDay();
+        LocalDateTime endDate = yearMonth.plusMonths(1).atDay(1).atStartOfDay();
+
+        List<Object[]> results = transactionRepository.findMonthlySummaryForAllAccounts(startDate, endDate);
+
+        return results.stream()
+                .map(r -> new MonthlyResponse(
+                        r[0].toString(),              // account number
+                        r[1].toString(),              // transaction type
+                        (BigDecimal) r[2]             // total amount
+                ))
+                .collect(Collectors.toList());
+    }
+    public List<Transaction> findTransactionsBetween(LocalDateTime start, LocalDateTime end) {
+        return transactionRepository.findByTimestampBetween(start, end);
     }
 
 }

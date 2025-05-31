@@ -31,6 +31,17 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             @Param("endDate") LocalDateTime endDate
     );
     List<Transaction> findAll();
+    @Query("""
+    SELECT 
+        t.sourceAccount.accountNumber,
+        t.type,
+        SUM(t.amount)
+    FROM Transaction t
+    WHERE t.timestamp BETWEEN :startDate AND :endDate
+    GROUP BY t.sourceAccount.accountNumber, t.type
+""")
+    List<Object[]> findMonthlySummaryForAllAccounts(LocalDateTime startDate, LocalDateTime endDate);
+    List<Transaction> findByTimestampBetween(LocalDateTime start, LocalDateTime end);
 
 }
 
