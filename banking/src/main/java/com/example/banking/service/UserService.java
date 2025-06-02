@@ -28,7 +28,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-
+    private final AuditLogService auditLogService;
     private final JWTUtil jwtUtil;
 
 
@@ -88,6 +88,7 @@ public class UserService {
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
         );
 
+
         return jwtUtil.generateToken(userDetails);
 
     }
@@ -140,5 +141,8 @@ public class UserService {
             return true;
         }
         return false;
+    }
+    public List<User> findAllUsers() {
+        return userRepository.findAll();
     }
 }

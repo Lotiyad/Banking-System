@@ -2,6 +2,7 @@ package com.example.banking.service;
 
 import com.example.banking.dto.BankAccountResponse;
 import com.example.banking.entity.BankAccount;
+import com.example.banking.exception.ResourceNotFoundException;
 import com.example.banking.repository.BankAccountRepository;
 import com.example.banking.repository.UserRepository;
 import com.example.banking.status.AccountStatus;
@@ -24,6 +25,7 @@ public class BankAccountService {
     private final BankAccountRepository accountRepository;
     private final UserRepository userRepository;
     private final BankAccountRepository bankAccountRepository;
+    private final AuditLogService auditLogService;
     public BankAccount createAccount(String username, AccountType accountType, BigDecimal initialDeposit, String branch) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
@@ -38,7 +40,7 @@ public class BankAccountService {
         account.setInitialDeposit(initialDeposit);
         account.setBalance(initialDeposit);
         account.setBranch(branch);
-
+        
         return accountRepository.save(account);
     }
 
@@ -69,6 +71,10 @@ public class BankAccountService {
         account.setApproved(true);
         account.setStatus(AccountStatus.ACTIVE);
         accountRepository.save(account);
+        auditLogService.logAction(
+                "Account Approval",
+                "Account approved: ID=" + account.getId() + ", AccountNumber=" + account.getAccountNumber()
+        );
     }
 
     public List<BankAccountResponse> getAccountsByUsername(String username) {
@@ -117,6 +123,32 @@ public class BankAccountService {
                         account.getBranch()
                 ))
                 .collect(Collectors.toList());
+    }
+    public List<BankAccount> findAllAccounts() {
+        return bankAccountRepository.findAll();
+    }
+    public void freezeAccount(Long accountId) {
+        BankAccount account = bankAccountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        account.setStatus(AccountStatus.FROZEN);
+        bankAccountRepository.save(account);
+
+        // Create descriptive details string
+        String details = "Account frozen: ID=" + account.getId() + ", AccountNumber=" + account.getAccountNumber();
+
+        auditLogService.logAction("Freeze Account", details);
+    }
+
+    public void unfreezeAccount(Long accountId) {
+        BankAccount account = bankAccountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        account.setStatus(AccountStatus.ACTIVE);
+        bankAccountRepository.save(account);
+
+        // Create descriptive details string
+        String details = "Account unfrozen: ID=" + account.getId() + ", AccountNumber=" + account.getAccountNumber();
+
+        auditLogService.logAction("Unfreeze Account", details);
     }
 
 

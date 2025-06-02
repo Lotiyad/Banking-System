@@ -42,6 +42,7 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final BankAccountService bankAccountService;
+    private final AuditLogService auditLogService;
     private String generateReference() {
         return UUID.randomUUID().toString().substring(0, 10).toUpperCase();
     }
@@ -64,6 +65,10 @@ public class TransactionService {
         tx.setTimestamp(LocalDateTime.now());
         tx.setRemarks(remarks);
         tx.setReferenceNumber(generateReference());
+
+        auditLogService.logAction("Deposit",
+                "Deposited " + amount + " to account ID=" + account.getId() +
+                        ", AccountNumber=" + account.getAccountNumber());
 
 
 
@@ -91,6 +96,9 @@ public class TransactionService {
         tx.setRemarks(remarks);
         tx.setReferenceNumber(generateReference());
 
+        auditLogService.logAction("Withdraw",
+                "Withdrawn " + amount + " from account ID=" + account.getId() +
+                        ", AccountNumber=" + account.getAccountNumber());
 
 
         return transactionRepository.save(tx);
@@ -140,6 +148,14 @@ public class TransactionService {
 
         transactionRepository.save(debitTx);
         transactionRepository.save(creditTx);
+
+        auditLogService.logAction("Transfer - Debit",
+                "Transferred " + amount + " from ID=" + source.getId() + ", AccountNumber=" + source.getAccountNumber() +
+                        " to ID=" + dest.getId() + ", AccountNumber=" + dest.getAccountNumber());
+
+        auditLogService.logAction("Transfer - Credit",
+                "Received " + amount + " to ID=" + dest.getId() + ", AccountNumber=" + dest.getAccountNumber() +
+                        " from ID=" + source.getId() + ", AccountNumber=" + source.getAccountNumber());
 
         return debitTx;
     }

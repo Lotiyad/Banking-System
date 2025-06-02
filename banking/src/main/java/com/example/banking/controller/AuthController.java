@@ -4,8 +4,10 @@ import com.example.banking.auth.AuthRequest;
 import com.example.banking.auth.AuthResponse;
 import com.example.banking.dto.RegisterRequest;
 import com.example.banking.repository.UserRepository;
+import com.example.banking.service.AuditLogService;
 import com.example.banking.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private final AuditLogService auditLogService;
     private final UserService userService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -35,7 +38,9 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
             String jwt = userService.authenticateUser(request);
+            auditLogService.logAction("User Login", "User logged in: " + request.getUsername());
             return ResponseEntity.ok(new AuthResponse(jwt));
+
         } catch (LockedException e) {
             return ResponseEntity.status(HttpStatus.LOCKED).body(e.getMessage());
         } catch (BadCredentialsException e) {
@@ -43,6 +48,8 @@ public class AuthController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+
+
     }
 
 
