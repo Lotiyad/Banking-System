@@ -60,7 +60,7 @@ cd banking
 ### 2.Configure Application Properties
 <pre>
 spring.datasource.url=jdbc:mysql://localhost:3306/BMS
-spring.datasource.username=root
+spring.datasource.username=your_username
 spring.datasource.password=your_password
 
 spring.jpa.hibernate.ddl-auto=update
